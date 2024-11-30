@@ -1,0 +1,94 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct Product {
+    string name, brand;
+    int id, stock;
+    float price;
+};
+
+class Inventory {
+public:
+    vector<Product> items;
+
+    void addProduct(const string &name, const string &brand, int id, int stock, float price) {
+        items.push_back({name, brand, id, stock, price});
+        cout << "\n\t\t PRODUCT ADDED SUCCESSFULLY\n";
+    }
+
+    void removeProduct(const string &name, int id) {
+        for (auto it = items.begin(); it != items.end(); ++it) {
+            if (it->name == name && it->id == id) {
+                items.erase(it);
+                cout << "\n\t\t PRODUCT REMOVED SUCCESSFULLY\n";
+                return;
+            }
+        }
+        cout << "\n\t\t PRODUCT NOT FOUND\n";
+    }
+
+    void searchProduct(const string &name, int id) {
+        for (const auto &product : items) {
+            if (product.name == name && product.id == id) {
+                cout << "\n\t\t PRODUCT FOUND: " << product.name << " | " << product.brand
+                     << " | ID: " << product.id << " | Stock: " << product.stock
+                     << " | Price: " << product.price << "\n";
+                return;
+            }
+        }
+        cout << "\n\t\t PRODUCT NOT FOUND\n";
+    }
+
+    void updateProduct(const string &name, int id, int newStock, float newPrice) {
+        for (auto &product : items) {
+            if (product.name == name && product.id == id) {
+                product.stock = newStock;
+                product.price = newPrice;
+                cout << "\n\t\t PRODUCT UPDATED SUCCESSFULLY\n";
+                return;
+            }
+        }
+        cout << "\n\t\t PRODUCT NOT FOUND\n";
+    }
+};
+
+int main() {
+    Inventory store;
+    string name, brand;
+    int id, stock, option;
+    float price;
+
+    do {
+        cout << "\n\t1. ADD PRODUCT\n\t2. REMOVE PRODUCT\n\t3. SEARCH PRODUCT\n\t4. UPDATE PRODUCT\n\t5. EXIT\n\tChoose: ";
+        cin >> option;
+        cin.ignore();
+
+        switch (option) {
+            case 1:
+                cout << "\nEnter name, brand, ID, stock, price: ";
+                getline(cin, name); getline(cin, brand); cin >> id >> stock >> price;
+                store.addProduct(name, brand, id, stock, price);
+                break;
+            case 2:
+                cout << "\nEnter name, ID to remove: ";
+                getline(cin, name); cin >> id;
+                store.removeProduct(name, id);
+                break;
+            case 3:
+                cout << "\nEnter name, ID to search: ";
+                getline(cin, name); cin >> id;
+                store.searchProduct(name, id);
+                break;
+            case 4:
+                cout << "\nEnter name, ID, new stock, new price: ";
+                getline(cin, name); cin >> id >> stock >> price;
+                store.updateProduct(name, id, stock, price);
+                break;
+        }
+    } while (option != 5);
+
+    return 0;
+}
