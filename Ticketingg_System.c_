@@ -1,0 +1,81 @@
+#include <iostream>
+#include <queue>
+#include <iomanip>
+#include <sstream>
+#include <thread>
+#include <chrono>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
+
+class Person {
+public:
+    std::string name;
+    int ticket_number;
+    Person(const std::string& name, int ticket_number) : name(name), ticket_number(ticket_number) {}
+};
+
+class Queue {
+private:
+    std::queue<Person> line;
+    int next_ticket = 1;
+    std::mutex mtx;
+    std::atomic<bool> running{true};
+    std::condition_variable cv;
+
+public:
+    void Enqueue(const std::string& name) {
+        std::lock_guard<std::mutex> lock(mtx);
+        line.push(Person(name, next_ticket++));
+        std::cout << name << " added with Ticket #" << std::setw(3) << std::setfill('0') << next_ticket - 1 << "\n";
+    }
+
+    void AutoDequeue() {
+        while (running) {
+            std::unique_lock<std::mutex> lock(mtx);
+            if (cv.wait_for(lock, std::chrono::minutes(1), [this]() { return !running; })) break;
+
+            if (!line.empty()) {
+                Person front = line.front();
+                line.pop();
+                std::cout << "\nDequeued: " << front.name << " (Ticket #" << std::setw(3) << std::setfill('0') << front.ticket_number << ")\n";
+                std::cout << "Queue size: " << line.size() << "\n";
+                if (!line.empty()) {
+                    Person next = line.front();
+                    std::cout << "Next: " << next.name << " (Ticket #" << std::setw(3) << std::setfill('0') << next.ticket_number << ")\n";
+                }
+            } else {
+                std::cout << "\nQueue empty.\n";
+            }
+        }
+    }
+
+    void StopAutoDequeue() {
+        running = false;
+        cv.notify_all();
+    }
+};
+
+int main() {
+    Queue q;
+    std::thread t(&Queue::AutoDequeue, &q);
+
+    int option;
+    std::string name;
+    std::cout << "1. Enqueue 2. Exit\n";
+    while (true) {
+        std::cout << "Choose option: ";
+        std::cin >> option;
+        if (option == 1) {
+            std::cout << "Enter name: ";
+            std::cin >> name;
+            q.Enqueue(name);
+        } else if (option == 2) {
+            q.StopAutoDequeue();
+            break;
+        }
+    }
+
+    if (t.joinable()) t.join();
+    return 0;
+}
